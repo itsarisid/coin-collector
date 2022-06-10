@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <style> canvas { border: 2px solid #ddd;cursor: none;} </style>
+</head>
+<body>
+<center id='mainCont'></center>
+
+<script>
+var cW = 500;   // game width
+var cH = 500;   // game height
+var canvas = document.createElement("canvas");
+canvas.width = cW;
+canvas.height = cH;
+var mousex = 160,
+mousey = 120,
+finished = false,
+score = 0,
+lostCoins = 0;
+
+document.getElementById('mainCont').appendChild(canvas);
+var ctx = canvas.getContext("2d");
+
+    // updating canvas at 60fps
+    setInterval(function(){ 
+        update(); draw(); 
+    }, 1000/60);
+
+    // adding coins before frame refresh
+    setInterval(function(){ 
+        if(Math.random()>0.7){addCoin();}
+    }, 1000/30);
+
+    // player attributes
+    var player = {
+        x: 32,
+        y: 120,
+        width: 32,
+        height: 32,
+        yspeed: 0
+    };
+
+
+    // drawing game including coins rain and box position
+    var gravity = .5;
+    function draw(){
+        if (finished==false){
+            ctx.clearRect(0,0,cW,cH);
+            coins.forEach(function(coin){
+                if (coin.active) { coin.draw(); }
+            });
+            ctx.fillStyle = "red";
+            ctx.fillRect(player.x-(player.width/2), player.y-(player.height/2), player.width, player.height);
+        }
+        else {
+            ctx.clearRect(0, 0, cW, cH);
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "#00ff00";
+            ctx.fillText("You Got 50 Coins", 130, 240);
+        }
+    }
+
+
+    // updating coins
+    var vanishedcoins;
+    function update(){
+        if (finished){ exit; }
+        if (score>=50) {
+            finished = true;
+            vanishedcoins = lostCoins;
+        }
+        gravity+=.5;
+        player.y += gravity;
+        player.y -= player.yspeed;
+
+        if (player.y>cH-16){
+            gravity = 0;
+            player.yspeed = 0;
+            player.y=cH-16;
+        }
+
+        coins.forEach(function(coin){
+            if(coin.active){ coin.update(); }
+        });
+
+    }
+
+    // adding coins to viewport
+    var coins = [];
+    function addCoin(){
+        var coin = {
+            active: true,
+            x: Math.random()*cW,
+            y: -16,
+            width: 8,
+            height: 16,
+            gravity: 0.5,
+            draw: function(){
+                ctx.fillStyle = "yellow";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            },
+            update: function(){
+                this.gravity+=.5;
+                this.y+=this.gravity;
+                if (this.gravity>3){
+                    this.gravity = 3;
+                }
+                if(collides(this,player)){
+                    score++;
+                    this.active = false;
+                }
+                if(this.y>cH){
+                    this.active = false;
+                    lostCoins++;
+                }
+            }
+        };
+        coins.push(coin);
+    }
+
+    // getting if the box got the coin
+    function collides(a, b) {
+        if(b==player) {
+            b = {
+                    x: player.x-16,
+                    y: player.y-16,
+                    width: player.width,
+                    height: player.height
+                }
+        }
+        return a.x < b.x + b.width && a.x + a.width> b.x && a.y < b.y + b.height && a.y + a.height> b.y;
+    }
+
+
+    // attaching mousemove event to box
+    canvas.onmousemove = function(e){
+        mousex = e.pageX-this.offsetLeft;
+        mousey = e.pageY-this.offsetTop;
+        player.x = e.pageX-this.offsetLeft;
+    };
+</script>
+</body>
+</html>
